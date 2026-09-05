@@ -57,7 +57,8 @@ export function Nav() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <span className="badge badge-neutral">awaiting launch</span>
+          {/* lg, not md: at ~780px this collides with the centred nav links */}
+          <span className="badge badge-neutral hidden lg:inline-flex">awaiting launch</span>
           <a
             className="icon-btn"
             href={site.xUrl}

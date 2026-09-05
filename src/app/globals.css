@@ -572,9 +572,14 @@
 
    what ships is drawn per pixel on a canvas (lib/balloon.ts) — an exact
    distance transform turned into a circular profile and shaded with real
-   blinn-phong. what follows is the fallback that holds the layout while that
-   runs: baloo 2 for the round inflated skeleton, the #puff svg filter (see
-   <PuffFilter />) for the specular pinch and the seam.
+   blinn-phong. what follows is only the placeholder that holds the layout for
+   the ~400ms before that lands.
+
+   it is deliberately flat. an earlier version ran the #puff svg filter over
+   live text to fake the same look, and a gaussian height field is soft
+   everywhere while a balloon is a tube — it read as gel, and it was what
+   showed whenever the swap below failed. a clean flat wordmark for a third of
+   a second beats a bad 3D one.
 --------------------------------------------------------------------------- */
 
 .balloon {
@@ -586,30 +591,48 @@
   line-height: 1.06;
   /* letters crowd together like a balloon bouquet — but stop short of merging */
   letter-spacing: -0.015em;
-  /* the base sits deliberately deep; the lighting is what brings it up to rose */
-  color: #ef4d97;
+  color: #ff5aa8;
   /* the stroke is the inflation: it fattens every limb and shrinks the
      counters, which is what separates a balloon from bold type */
-  -webkit-text-stroke: 0.062em #ef4d97;
+  -webkit-text-stroke: 0.062em #ff5aa8;
   paint-order: stroke fill;
-  filter: url(#puff) drop-shadow(0 30px 34px #18426052);
+  filter: drop-shadow(0 22px 26px #18426040);
   animation: balloon-buoy 9s ease-in-out infinite;
   will-change: transform;
   user-select: none;
 }
 
-@media (max-width: 640px) {
-  .balloon {
-    filter: url(#puff-md) drop-shadow(0 18px 22px #18426052);
-  }
+/* ---------------------------------------------------------------------------
+   the swap from placeholder to rendered wordmark.
+
+   driven by a data attribute rather than by inline styles: react owns the
+   image's style prop, so an imperatively set opacity was wiped on the next
+   render — leaving the image invisible *and* the placeholder hidden. react
+   never writes data-ready.
+--------------------------------------------------------------------------- */
+
+.balloon-img {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  filter: drop-shadow(0 26px 32px #1842604d);
+}
+
+.balloon-swap[data-ready="1"] > .balloon-img {
+  opacity: 1;
+}
+
+.balloon-swap[data-ready="1"] > .balloon {
+  display: none;
 }
 
 .balloon-mark {
   font-size: inherit;
   line-height: 1;
   letter-spacing: 0;
-  -webkit-text-stroke: 0.05em #ef4d97;
+  -webkit-text-stroke: 0.05em #ff5aa8;
   animation: none;
+  /* the small logo keeps the svg filter: at 40px the gaussian height field is
+     the right size for the stroke, which is exactly what fails at 150px */
   filter: url(#puff-sm) drop-shadow(0 6px 10px #18426040);
 }
 

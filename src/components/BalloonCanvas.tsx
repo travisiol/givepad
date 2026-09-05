@@ -5,7 +5,7 @@ import { drawBalloonWord } from "@/lib/balloon";
 import { site } from "@/lib/site";
 
 /** bump when the renderer's output changes, or browsers keep serving the old look */
-const CACHE_KEY = `givepad:balloon:1:${site.wordmark}`;
+const CACHE_KEY = `givepad:balloon:5:${site.wordmark}`;
 
 /**
  * The wordmark, inflated for real — see lib/balloon.ts for the how.
@@ -15,10 +15,17 @@ const CACHE_KEY = `givepad:balloon:1:${site.wordmark}`;
  * first visit renders it a letter at a time (yielding between each, with the
  * CSS balloon showing meanwhile), every visit after that decodes it and is
  * done. Falling back to the drawn balloon costs nothing if storage is blocked.
+ *
+ * The swap between the two is a `data-ready` attribute on the wrapper, driven
+ * by CSS, and that detail matters: the first version set `style.opacity` on
+ * the image imperatively, and because React owns that element's `style` prop
+ * it wiped the value on the next render — leaving the image at zero opacity
+ * *and* the fallback hidden, so the hero rendered nothing at all. React never
+ * writes `data-ready`, so nothing can undo it.
  */
 export function BalloonCanvas({ text = site.wordmark }: { text?: string }) {
+  const wrapRef = useRef<HTMLSpanElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const fallbackRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const img = imgRef.current;
@@ -32,10 +39,7 @@ export function BalloonCanvas({ text = site.wordmark }: { text?: string }) {
     const reveal = (src: string) =>
       new Promise<void>((resolve) => {
         const show = () => {
-          if (!cancelled) {
-            img.style.opacity = "1";
-            if (fallbackRef.current) fallbackRef.current.style.display = "none";
-          }
+          if (!cancelled && wrapRef.current) wrapRef.current.dataset.ready = "1";
           resolve();
         };
         img.onload = show;
@@ -77,7 +81,7 @@ export function BalloonCanvas({ text = site.wordmark }: { text?: string }) {
       const canvas = document.createElement("canvas");
       if (!(await drawBalloonWord(canvas, text, { fontFamily: family })) || cancelled) return;
 
-      const url = canvas.toDataURL("image/webp", 0.92);
+      const url = canvas.toDataURL("image/webp", 0.95);
       await reveal(url);
 
       if (cacheable) {
@@ -94,18 +98,17 @@ export function BalloonCanvas({ text = site.wordmark }: { text?: string }) {
     };
   }, [text]);
 
+  // the width is capped against the viewport as well as in pixels: the cause
+  // tiles sit 3–5% in from the edges, so a wordmark that stays 660px wide runs
+  // straight into them somewhere below 1100px
   return (
-    <span className="grid justify-items-center w-full max-w-[660px] [&>*]:col-start-1 [&>*]:row-start-1">
-      <span ref={fallbackRef} className="balloon">
-        {text}
-      </span>
+    <span
+      ref={wrapRef}
+      className="balloon-swap grid justify-items-center w-full max-w-[min(660px,58vw)] [&>*]:col-start-1 [&>*]:row-start-1"
+    >
+      <span className="balloon">{text}</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={imgRef}
-        alt={text}
-        className="w-full h-auto select-none opacity-0 transition-opacity duration-300"
-        style={{ filter: "drop-shadow(0 26px 32px #18426052)" }}
-      />
+      <img ref={imgRef} alt={text} className="balloon-img w-full h-auto select-none" />
     </span>
   );
 }

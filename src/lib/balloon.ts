@@ -36,7 +36,7 @@ const DEFAULTS = {
   fontSize: 420,
   tracking: -0.055,
   base: [252, 118, 176] as [number, number, number],
-  deep: [158, 20, 92] as [number, number, number],
+  deep: [154, 20, 96] as [number, number, number],
 };
 
 const yieldToBrowser = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -132,6 +132,59 @@ function distanceField(inside: Uint8Array, w: number, h: number): Float32Array {
 }
 
 /* ------------------------------------------------------------------ *
+ * height-field smoothing
+ * ------------------------------------------------------------------ */
+
+/**
+ * A separable box blur, run twice — close enough to a Gaussian, and linear in
+ * the radius rather than quadratic.
+ *
+ * The height field needs it before anything differentiates it. An exact
+ * distance transform has a ridge along the medial axis of every stroke, where
+ * the nearest edge switches sides, and it is quantised to whole pixels
+ * everywhere else. Neither matters while you are looking at distances; both
+ * become visible the moment you take a gradient, as a dark line down the spine
+ * of each tube and a fine ribbing across it. Blurring by a few pixels — an
+ * order of magnitude less than the tube radius — removes both without
+ * measurably changing the shape of the tube.
+ */
+function blurField(field: Float32Array, w: number, h: number, radius: number): void {
+  const inv = 1 / (2 * radius + 1);
+  const tmp = new Float32Array(w * h);
+
+  // two passes of a box blur in each direction; the running sum makes the
+  // cost independent of the radius
+  for (let pass = 0; pass < 2; pass++) {
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      let sum = 0;
+      for (let i = -radius; i <= radius; i++) {
+        sum += field[row + (i < 0 ? 0 : i > w - 1 ? w - 1 : i)];
+      }
+      for (let x = 0; x < w; x++) {
+        tmp[row + x] = sum * inv;
+        const add = x + radius + 1;
+        const sub = x - radius;
+        sum += field[row + (add > w - 1 ? w - 1 : add)] - field[row + (sub < 0 ? 0 : sub)];
+      }
+    }
+
+    for (let x = 0; x < w; x++) {
+      let sum = 0;
+      for (let i = -radius; i <= radius; i++) {
+        sum += tmp[(i < 0 ? 0 : i > h - 1 ? h - 1 : i) * w + x];
+      }
+      for (let y = 0; y < h; y++) {
+        field[y * w + x] = sum * inv;
+        const add = y + radius + 1;
+        const sub = y - radius;
+        sum += tmp[(add > h - 1 ? h - 1 : add) * w + x] - tmp[(sub < 0 ? 0 : sub) * w + x];
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * lighting
  * ------------------------------------------------------------------ */
 
@@ -177,8 +230,8 @@ function renderGlyph(
   const desc = Math.ceil(m.actualBoundingBoxDescent ?? fontSize * 0.3);
 
   // the inflation radius: half a stem, so a stem becomes one full round tube
-  const R = fontSize * 0.115;
-  const stroke = fontSize * 0.045;
+  const R = fontSize * 0.135;
+  const stroke = fontSize * 0.055;
   const pad = Math.ceil(stroke + 8);
 
   const w = left + right + pad * 2;
@@ -232,6 +285,11 @@ function renderGlyph(
     height[i] = Math.sqrt(1 - u * u) * R;
   }
 
+  // …and then softened, before anything takes its gradient. see blurField:
+  // untouched, the medial axis of every stroke shows up as a dark line down
+  // its spine and the pixel quantisation as fine ribbing across it
+  blurField(height, w, h, Math.max(1, Math.round(R * 0.1)));
+
   const lit = document.createElement("canvas");
   lit.width = w;
   lit.height = h;
@@ -241,8 +299,27 @@ function renderGlyph(
   const o = out.data;
 
   const [br, bg, bb] = base;
-  const [dr, dg, db] = deep;
-  const seamR = R * 0.17;
+
+  // The colours the shading moves between.
+  //
+  // The first version multiplied the body colour by a scalar running from 0.29
+  // to 1.32, so the side of every tube collapsed towards black while its top
+  // clipped to white — the letters came out muddy and desaturated instead of
+  // inflated. Foil does not behave like that. It is translucent, so its dark
+  // side is still emphatically the colour of the balloon, and its lit side
+  // rolls towards a pale tint of that colour rather than towards paper.
+  //
+  // So nothing here is multiplied and nothing clips: every term mixes between
+  // fixed colours, all of them the same hue.
+  const [sr, sg, sb] = deep; // shadow — the same hue, deeper
+  const tr = br + (255 - br) * 0.84; // sheen — a pale tint of the body
+  const tg = bg + (255 - bg) * 0.84;
+  const tb = bb + (255 - bb) * 0.84;
+  const wr = sr * 0.58; // weld — deeper again, still the same hue
+  const wg = sg * 0.58;
+  const wb = sb * 0.58;
+
+  const seamR = R * 0.15;
 
   // the padding guarantees no glyph pixel touches the border, so the 4-way
   // gradient below never needs a bounds check
@@ -276,27 +353,48 @@ function renderGlyph(
       const h16 = h8 * h8;
       const h32 = h16 * h16;
       const h64 = h32 * h32;
-      const glint = h64 * h16 * h4; // hd^84
-      const sheen = h16 * h4; // hd^20
-      const white = 255 * (1.05 * glint + 0.4 * sheen);
+      const glint = h64 * h16; // hd^80 — the small hot core
+      const sheen = h32; // hd^32 — the band of gloss around it
 
-      // the weld: only the last sliver before the silhouette rolls off, or the
-      // whole letter goes muddy
+      // body: shadow towards base, floored so it never leaves the hue
+      const t = 0.22 + 0.78 * key;
+      let r = sr + (br - sr) * t;
+      let g = sg + (bg - sg) * t;
+      let b = sb + (bb - sb) * t;
+
+      // Rim light. `1 - Nz` is zero on the top of the tube and one at the
+      // silhouette, so cubing it concentrates the bounce into a bright edge
+      // where the surface turns away — instead of washing the whole
+      // underside, which is what left the letters looking flat. This is the
+      // term that reads as foil rather than as plastic.
+      const facing = 1 - Nz;
+      const rim = facing * facing * facing * fill;
+      const f = 0.62 * rim;
+      r += (tr - r) * f;
+      g += (tg - g) * f;
+      b += (tb - b) * f;
+
+      // the band of gloss along the top of the tube…
+      const s = 0.82 * sheen;
+      r += (tr - r) * s;
+      g += (tg - g) * s;
+      b += (tb - b) * s;
+
+      // …and the hot core sitting inside it, the giveaway that this is mylar
+      const c = glint;
+      r += (255 - r) * c;
+      g += (255 - g) * c;
+      b += (255 - b) * c;
+
+      // the weld: a thin darker line hugging the silhouette. only the last
+      // sliver before the surface rolls off, or the whole letter goes muddy
       const d = dist[i];
-      const seam = d < seamR ? d / seamR : 1;
-      const shade = (0.54 + 0.6 * key + 0.18 * fill) * (0.54 + 0.46 * seam);
-
-      let r = br * shade + white;
-      let g = bg * shade + white;
-      let b = bb * shade + white;
-
-      // the crease itself picks up the shadow tint rather than just going grey
-      if (seam < 0.32) {
-        const k = (1 - seam / 0.32) * 0.8;
+      if (d < seamR) {
+        const k = (1 - d / seamR) * 0.6;
         const j = 1 - k;
-        r = r * j + dr * k;
-        g = g * j + dg * k;
-        b = b * j + db * k;
+        r = r * j + wr * k;
+        g = g * j + wg * k;
+        b = b * j + wb * k;
       }
 
       const p = i * 4;
