@@ -1,0 +1,713 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   givepad design tokens
+
+   The look is one idea: a bright day with balloons in it. A blue sky behind
+   everything, white glass panels floating on it, inflated foil type, and
+   exactly one accent — rose — reserved for the giving side of the product.
+
+   The rule that keeps it honest: rose marks a cause, a share heading to a
+   cause, or the act of giving. It never dresses up a number that is only a
+   market figure, and no figure on this site claims money has moved until an
+   indexer answers at NEXT_PUBLIC_GIVEPAD_API. See lib/given.ts.
+--------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --sky-1: #2f8ed6;
+  --sky-2: #5aaee7;
+  --sky-3: #83c6ef;
+  --sky-4: #a6d8f5;
+  --sky-5: #bce3f8;
+
+  --ink: #2a1024;
+  --ink-60: #2a102494;
+  --ink-40: #2a102466;
+
+  --rose: #ff5aa8;
+  --rose-deep: #e11d78;
+  --rose-text: #8a0f4b;
+  --rose-soft: #ffd5e8;
+
+  --glass: #ffffff85;
+  --glass-strong: #ffffffd6;
+  --glass-border: #ffffffcc;
+  --glass-shadow: inset 0 1px 0 #fffffff2, 0 18px 40px #18426033;
+  --glass-shadow-sm: inset 0 1px 0 #ffffffeb, 0 12px 30px #18426029;
+
+  --radius-card: 26px;
+  --radius-card-sm: 20px;
+  --radius-pill: 999px;
+
+  --danger: #d94a4a;
+  --success: #2e9e5b;
+  --line: #2a102414;
+  --line-strong: #2a102433;
+
+  --bg-elevated: #fff;
+  --divider: var(--line);
+  --text-primary: var(--ink);
+  --text-muted: var(--ink-60);
+  --text-subtle: var(--ink-40);
+  --accent: var(--rose-deep);
+  --accent-soft: var(--rose-soft);
+
+  --nav-height: 64px;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    position: relative;
+    min-height: 100vh;
+    color: var(--ink);
+    background: linear-gradient(180deg, #4da8e6 0, #74c0ef 30%, #a6d8f5 58%, #d7edfa 100%) fixed;
+    font-family: var(--font-sans), "Montserrat", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  @media (min-width: 640px) {
+    body {
+      font-size: 16px;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--ink);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  thead th {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+    text-align: left;
+    padding: 12px 14px;
+  }
+
+  thead th,
+  tbody td {
+    border-bottom: 1px solid var(--line);
+  }
+
+  tbody td {
+    padding: 14px;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a102433;
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2a102459;
+    background-clip: padding-box;
+  }
+
+  ::selection {
+    background: var(--rose);
+    color: #fff;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   components — kept inside @layer so a utility written next to them still wins
+--------------------------------------------------------------------------- */
+
+@layer components {
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-strong {
+    background: var(--glass-strong);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .card {
+    position: relative;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .card-sm {
+    border-radius: var(--radius-card-sm);
+    box-shadow: var(--glass-shadow-sm);
+  }
+
+  .panel {
+    position: relative;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
+    padding: 28px;
+  }
+
+  @media (min-width: 640px) {
+    .panel {
+      padding: 40px;
+    }
+  }
+
+  .nav-glass {
+    background: #ffffffb8;
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: 0 8px 30px #18426014;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.18s ease, filter 0.18s ease, background-color 0.18s ease,
+      box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-ghost:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active,
+  .btn-secondary:active,
+  .btn-ghost:active {
+    transform: translateY(0);
+  }
+
+  .btn-primary {
+    background: var(--rose);
+    color: var(--ink);
+    box-shadow: inset 0 1px 0 #ffffff80, 0 10px 24px #e11d7845;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.05);
+    box-shadow: inset 0 1px 0 #ffffff99, 0 14px 30px #e11d7859;
+  }
+
+  .btn-primary:disabled,
+  .btn-primary[aria-disabled="true"] {
+    background: var(--rose-soft);
+    color: var(--ink-40);
+    box-shadow: none;
+    filter: none;
+    transform: none;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--glass-strong);
+    border-color: var(--glass-border);
+    color: var(--ink);
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 #ffffffeb, 0 6px 18px #18426020;
+  }
+
+  .btn-secondary:hover {
+    background: #fff;
+    box-shadow: inset 0 1px 0 #fff, 0 10px 24px #1842602b;
+  }
+
+  .btn-secondary:disabled,
+  .btn-secondary[aria-disabled="true"] {
+    color: var(--ink-40);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+  }
+
+  .btn-sm {
+    padding: 8px 14px;
+    font-size: 11px;
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 #ffffffeb, 0 6px 16px #1842601f;
+    transition: background-color 0.18s ease, transform 0.18s ease;
+  }
+
+  .icon-btn:hover {
+    background: #fff;
+    transform: translateY(-1px);
+  }
+
+  .input,
+  .select {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    caret-color: var(--rose-deep);
+    box-shadow: inset 0 1px 0 #ffffffeb, 0 4px 14px #18426014;
+    transition: box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  }
+
+  .select {
+    appearance: none;
+    padding-right: 40px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-60) 50%),
+      linear-gradient(135deg, var(--ink-60) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 22px, calc(100% - 15px) 22px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+
+  .input-pill {
+    border-radius: var(--radius-pill);
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .input::placeholder {
+    color: var(--ink-40);
+  }
+
+  .input:focus,
+  .select:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--rose-deep);
+    box-shadow: 0 0 0 2px var(--rose-deep);
+  }
+
+  .input:disabled {
+    color: var(--ink-40);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--rose-soft);
+    border: 0;
+    color: var(--rose-text);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .badge-neutral {
+    background: var(--glass-strong);
+    color: var(--ink-60);
+  }
+
+  .badge-success {
+    background: #2e9e5b1f;
+    color: var(--success);
+  }
+
+  .kicker {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+  }
+
+  .kicker b {
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kicker i,
+  .kicker .slash {
+    font-style: normal;
+    color: var(--ink-40);
+  }
+
+  .progress {
+    display: block;
+    position: relative;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .progress::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: var(--fill, 0);
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, var(--rose-deep), var(--rose));
+    transition: width 0.4s ease;
+  }
+
+  .orb {
+    display: block;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 32% 28%,
+      #ffe3f0 0,
+      var(--rose) 34%,
+      var(--rose-deep) 72%,
+      #9c0f52 100%
+    );
+    box-shadow: inset -10px -12px 20px #7d0f4266, inset 8px 10px 14px #ffffff8c,
+      0 18px 30px #18426033;
+    pointer-events: none;
+  }
+
+  .orb-float {
+    animation: orb-float 6s ease-in-out infinite;
+  }
+
+  .orb-float-slow {
+    animation: orb-float 9s ease-in-out infinite;
+    animation-delay: -3s;
+  }
+
+  .accent-word {
+    color: var(--rose-text);
+    background-image: linear-gradient(var(--rose), var(--rose));
+    background-repeat: no-repeat;
+    background-size: 100% 6px;
+    background-position: 0 94%;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .link {
+    color: var(--rose-text);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--rose-deep);
+    text-underline-offset: 3px;
+  }
+
+  .link:hover {
+    color: var(--ink);
+  }
+
+  .section {
+    padding-top: 96px;
+    padding-bottom: 96px;
+  }
+
+  @media (min-width: 1024px) {
+    .section {
+      padding-top: 128px;
+      padding-bottom: 128px;
+    }
+  }
+
+  .trow {
+    position: relative;
+    border-bottom: 1px solid var(--line);
+    transition: background-color 0.15s ease;
+  }
+
+  .trow:hover {
+    background: #ffffff33;
+  }
+
+  .trow:last-child {
+    border-bottom: 0;
+  }
+
+  .shimmer {
+    display: block;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #ffffff66, #ffffffcc 50%, #ffffff66);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  .code-block {
+    background: #ffffffb3;
+    color: var(--ink);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-card-sm);
+    box-shadow: var(--glass-shadow-sm);
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    white-space: pre;
+  }
+
+  .code-inline {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    padding: 2px 6px;
+    word-break: break-all;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   the sky: drifting clouds behind everything
+--------------------------------------------------------------------------- */
+
+.sky-clouds {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.cloud {
+  position: absolute;
+  left: 0;
+  background-image: radial-gradient(closest-side, #fff 62%, #ffffff00 100%),
+    radial-gradient(closest-side, #fff 60%, #ffffff00 100%),
+    radial-gradient(closest-side, #fff 60%, #ffffff00 100%),
+    radial-gradient(closest-side, #fff 58%, #ffffff00 100%),
+    radial-gradient(closest-side, #ffffffeb 55%, #ffffff00 100%);
+  background-size: 42% 74%, 36% 58%, 30% 48%, 26% 40%, 100% 42%;
+  background-position: 30% 34%, 58% 22%, 12% 52%, 78% 46%, 50% 76%;
+  background-repeat: no-repeat;
+  animation-name: sail;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------------------------
+   the wordmark: foil-balloon letters.
+
+   what ships is drawn per pixel on a canvas (lib/balloon.ts) — an exact
+   distance transform turned into a circular profile and shaded with real
+   blinn-phong. what follows is the fallback that holds the layout while that
+   runs: baloo 2 for the round inflated skeleton, the #puff svg filter (see
+   <PuffFilter />) for the specular pinch and the seam.
+--------------------------------------------------------------------------- */
+
+.balloon {
+  position: relative;
+  display: block;
+  font-family: var(--font-balloon), "Baloo 2", "Arial Rounded MT Bold", sans-serif;
+  font-weight: 800;
+  font-size: clamp(64px, 11.5vw, 150px);
+  line-height: 1.06;
+  /* letters crowd together like a balloon bouquet — but stop short of merging */
+  letter-spacing: -0.015em;
+  /* the base sits deliberately deep; the lighting is what brings it up to rose */
+  color: #ef4d97;
+  /* the stroke is the inflation: it fattens every limb and shrinks the
+     counters, which is what separates a balloon from bold type */
+  -webkit-text-stroke: 0.062em #ef4d97;
+  paint-order: stroke fill;
+  filter: url(#puff) drop-shadow(0 30px 34px #18426052);
+  animation: balloon-buoy 9s ease-in-out infinite;
+  will-change: transform;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .balloon {
+    filter: url(#puff-md) drop-shadow(0 18px 22px #18426052);
+  }
+}
+
+.balloon-mark {
+  font-size: inherit;
+  line-height: 1;
+  letter-spacing: 0;
+  -webkit-text-stroke: 0.05em #ef4d97;
+  animation: none;
+  filter: url(#puff-sm) drop-shadow(0 6px 10px #18426040);
+}
+
+/* ---------------------------------------------------------------------------
+   the floating cause tiles around the hero
+--------------------------------------------------------------------------- */
+
+.tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  animation: tile-float var(--dur, 7s) ease-in-out var(--delay, 0s) infinite;
+  transform: rotate(var(--rot, 0deg));
+  filter: blur(var(--blur, 0));
+  will-change: transform;
+}
+
+.tile svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 18px 26px #18426040);
+}
+
+.hero-h1 {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 14px #fff, 0 0 28px #ffffffe6, 0 0 56px #ffffffb3, 0 2px 0 #ffffff80;
+}
+
+.hero-h1 + p {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 12px #fff, 0 0 24px #ffffffcc;
+}
+
+@keyframes orb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes sail {
+  0% {
+    transform: translateX(-30vw);
+  }
+  100% {
+    transform: translateX(130vw);
+  }
+}
+
+@keyframes tile-float {
+  0%,
+  100% {
+    transform: translateZ(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(calc(var(--rot, 0deg) + 2deg));
+  }
+}
+
+@keyframes balloon-buoy {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-6px) rotate(-0.6deg);
+  }
+  70% {
+    transform: translateY(3px) rotate(0.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-up,
+  .orb-float,
+  .orb-float-slow,
+  .shimmer,
+  .cloud,
+  .tile,
+  .balloon {
+    animation: none;
+  }
+}
